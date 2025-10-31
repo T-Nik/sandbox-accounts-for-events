@@ -1,0 +1,87 @@
+# After environment starts, run this command to login and setup MCP servers:
+
+# q login --license pro --identity-provider https://d-99677b4b87.awsapps.com/start --region eu-central-1 && echo "/quit" | q chat && q mcp add --name awslabs.core-mcp-server --command uvx --args "awslabs.core-mcp-server@latest" --force && q mcp add --name awslabs.cdk-mcp-server --command uvx --args "awslabs.cdk-mcp-server@latest" --force && q mcp add --name awslabs.aws-diagram-mcp-server --command uvx --args "awslabs.aws-diagram-mcp-server@latest" --force && q mcp add --name aws-knowledge-mcp-server --command uvx --args '["mcp-proxy", "--transport", "streamablehttp", "https://knowledge-mcp.global.api.aws"]' --force && q mcp list
+
+# Devfile logs are automatically captured in /aws/mde/logs
+
+# To debug: ls /aws/mde/logs
+
+# Check status: /aws/mde/mde status
+
+# If devfile fails, it enters recovery mode - check logs and run: /aws/mde/mde start
+ 
+schemaVersion: 2.0.0
+
+metadata:
+
+  name: q-cli-amazonq-mcp
+
+components:
+
+  - name: aws-tools
+
+    container:
+
+      image: public.ecr.aws/aws-mde/universal-image:5.0
+
+      mountSources: true
+
+      command: ['sleep', 'infinity']
+
+commands:
+
+  - id: setup-environment
+
+    exec:
+
+      component: aws-tools
+
+      commandLine: "sleep 10 && whoami && pwd && which node && which npm"
+
+  - id: install-latest-cdk
+
+    exec:
+
+      component: aws-tools
+
+      commandLine: "set -e && npm config set fund false && npm config set audit false && npm config set prefix ~/.local && npm install -g aws-cdk@latest && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.bashrc"
+
+  - id: install-uv
+
+    exec:
+
+      component: aws-tools
+
+      commandLine: "curl -LsSf https://astral.sh/uv/install.sh | sh && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.bashrc && source ~/.bashrc"
+
+  - id: install-q-cli
+
+    exec:
+
+      component: aws-tools
+
+      commandLine: "cd /tmp && curl --proto '=https' --tlsv1.2 -sSf 'https://desktop-release.q.us-east-1.amazonaws.com/latest/q-x86_64-linux.zip' -o 'q.zip' && unzip q.zip && ./q/install.sh --no-confirm && rm -rf q.zip q/"
+
+  - id: show-versions
+
+    exec:
+
+      component: aws-tools
+
+      commandLine: "echo 'Node.js:' $(node --version) && echo 'npm:' $(npm --version) && echo 'AWS CDK:' $(cdk --version) && echo 'Setup complete! Use the command in comments to login and setup MCP servers.'"
+
+events:
+
+  postStart:
+
+    - setup-environment
+
+    - install-latest-cdk
+
+    - install-uv
+
+    - install-q-cli
+
+    - show-versions
+AWS access portal
+ 
